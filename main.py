@@ -13,5 +13,6 @@ if __name__ == '__main__':
     tz_to_publish = "UTC"
     # process(chat_id=chat_id)
     print("Запускаем расписание. Следующая публикация состоится в", time_to_publish, tz_to_publish)
+    schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)
     while True:
-        schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)
+        schedule.run_pending()
