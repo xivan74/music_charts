@@ -142,8 +142,8 @@ def insert_used_songs(no1_list, used_year_id):
 def insert_used_year(chart_year, used_when, chat_id, post_datetime, post_id):
     with conn.cursor() as curs:
         curs.execute(used_years_insert_sql, (chart_year, used_when, chat_id, post_datetime, post_id))
+        conn.commit()
         new_id = curs.fetchone()[0]
-    conn.commit()
     return new_id
 
 
