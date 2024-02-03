@@ -176,8 +176,9 @@ def process(chat_id):
             send_message(private_message, private_chat_id)
 
 
-now = datetime.now()
-# now = datetime(year=1988, month=6, day=18)
-process(work_chat_id)
+if __name__ == '__main__':
+    now = datetime.now()
+    # now = datetime(year=1988, month=6, day=18)
+    process(work_chat_id)
 
 
