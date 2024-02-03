@@ -57,8 +57,8 @@ ORDER BY used_when DESC
 used_years_insert_sql = """
  INSERT INTO used_years 
  (year, used_when, used_in_chat, post_time, post_id) 
- VALUES 
- (%s, %s, %s, to_timestamp(%s), %s);
+ VALUES (%s, %s, %s, to_timestamp(%s), %s)
+ RETURNING id;
 """
 used_songs_insert_sql = """
  INSERT INTO songs 
