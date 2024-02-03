@@ -182,7 +182,7 @@ def process(chat_id):
         post_id = get_post_id(post_answer)
         if chat_id != private_chat_id:
             used_year_id = insert_used_year(chart_year, post_date, chat_id, post_datetime, post_id)
-            insert_used_songs(no1_list, used_year_id)
+            insert_used_songs(no1_list_with_yt, used_year_id)
         if chat_id == group_chat_id:
             chat_name = get_chat_name(post_answer)
             private_message = f"Создан <a href='https://t.me/{chat_name}/{post_id}'>пост</a>"
