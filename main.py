@@ -1,5 +1,6 @@
 from no1 import process
 import schedule
+from datetime import timedelta
 
 
 chat_id = "-1002082261665"
@@ -14,5 +15,7 @@ if __name__ == '__main__':
     # process(chat_id=chat_id)
     schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)
     while True:
-        print("Запускаем расписание. Следующая публикация состоится в", time_to_publish, tz_to_publish)
+        # print("Запускаем расписание. Следующая публикация состоится в", time_to_publish, tz_to_publish)
+        time_of_next_run = schedule.next_run()
+        print(print(time_of_next_run))
         schedule.run_pending()
