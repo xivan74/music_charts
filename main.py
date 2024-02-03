@@ -9,10 +9,10 @@ work_chat_id = "-4158012020"
 
 
 if __name__ == '__main__':
-    time_to_publish = "13:17"
+    time_to_publish = "13:59"
     tz_to_publish = "UTC"
     # process(chat_id=chat_id)
-    print("Запускаем расписание. Следующая публикация состоится в", time_to_publish, tz_to_publish)
     schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)
     while True:
+        print("Запускаем расписание. Следующая публикация состоится в", time_to_publish, tz_to_publish)
         schedule.run_pending()

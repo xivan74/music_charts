@@ -60,6 +60,12 @@ used_years_insert_sql = """
  VALUES 
  (%s, %s, %s, to_timestamp(%s), %s);
 """
+used_songs_insert_sql = """
+ INSERT INTO songs 
+ (artist, title, yt_url, used_year_id, country) 
+ VALUES 
+ (%s, %s, %s, %s, %s);
+"""
 conn = pg_conn()
 
 
@@ -125,14 +131,20 @@ def get_message_head(chart_date: date):
     return message
 
 
-def insert_used_songs(post_date, chart_year, no1_list):
-    pass
+def insert_used_songs(no1_list, used_year_id):
+    with conn.cursor() as curs:
+        for no1 in no1_list:
+            country, week_date, artist, title, yt_url = no1
+            curs.execute(used_songs_insert_sql, (artist, title, yt_url, used_year_id, country))
+    conn.commit()
 
 
 def insert_used_year(chart_year, used_when, chat_id, post_datetime, post_id):
     with conn.cursor() as curs:
         curs.execute(used_years_insert_sql, (chart_year, used_when, chat_id, post_datetime, post_id))
+        new_id = curs.fetchone()[0]
     conn.commit()
+    return new_id
 
 
 def get_post_answer(result_text):
@@ -169,7 +181,8 @@ def process(chat_id):
         post_datetime = get_post_datetime(post_answer)
         post_id = get_post_id(post_answer)
         if chat_id != private_chat_id:
-            insert_used_year(chart_year, post_date, chat_id, post_datetime, post_id)
+            used_year_id = insert_used_year(chart_year, post_date, chat_id, post_datetime, post_id)
+            insert_used_songs(no1_list, used_year_id)
         if chat_id == group_chat_id:
             chat_name = get_chat_name(post_answer)
             private_message = f"Создан <a href='https://t.me/{chat_name}/{post_id}'>пост</a>"
