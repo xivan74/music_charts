@@ -85,7 +85,7 @@ def get_yt_urls(no1_list: list[tuple]):
     for no1 in no1_list:
         country, week_date, artist, title = no1
         yt_url = get_yt_url(artist, title)
-        new_no1_list.append((country, week_date, artist, title, yt_url))
+        new_no1_list.append((country, week_date, artist.upper(), title, yt_url))
     return new_no1_list
 
 
@@ -93,7 +93,7 @@ def print_no1_list(no1_list):
     no1_list_str = ""
     for no1 in no1_list:
         country, week_date, artist, title, yt_url = no1
-        song = f"{artist.upper()} - {title}"
+        song = f"{artist} - {title}"
         yt_link = f"<a href='{yt_url}'>{song}</a>"
         no1_row = f"{countries[country]['emoji']} <b>{countries[country]['rus']} |</b> {yt_link}"
         no1_list_str += f"{no1_row}\n"
