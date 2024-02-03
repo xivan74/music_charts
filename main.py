@@ -17,5 +17,5 @@ if __name__ == '__main__':
     schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)
     while True:
         time_of_next_run = schedule.next_run()
-        print("\rЗапускаем расписание. Следующая публикация состоится в", time_of_next_run)
+        print("\rЗапускаем расписание. Следующая публикация состоится в", time_of_next_run, end="")
         schedule.run_pending()
