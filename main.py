@@ -10,7 +10,7 @@ work_chat_id = "-4158012020"
 
 
 if __name__ == '__main__':
-    time_to_publish = "14:04"
+    time_to_publish = "14:08"
     tz_to_publish = "UTC"
     # process(chat_id=chat_id)
     print("Запускаем расписание.")
