@@ -1,3 +1,5 @@
+import time
+
 from no1 import process
 import schedule
 
@@ -14,6 +16,7 @@ if __name__ == '__main__':
     print("Запускаем расписание.")
     schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)
     while True:
+        time.sleep(1)
         time_of_next_run = schedule.next_run()
         print(f"\rСледующая публикация состоится в {time_of_next_run}", end="")
         schedule.run_pending()
