@@ -1,7 +1,7 @@
 import requests
 from db_utils import pg_conn
-from datetime import date, datetime
-from random import shuffle
+from datetime import date, datetime, timedelta
+from random import shuffle, randint
 from youtube_search import YoutubeSearch
 from urllib import parse
 from json import loads
@@ -46,13 +46,37 @@ CROSS JOIN LATERAL
         ORDER BY week_date DESC
         LIMIT 1
         ) t
-ORDER BY random()
+ORDER BY random();
 """
 used_years_sql = f"""
 SELECT year
 FROM "used_years"
 WHERE used_in_chat = {group_chat_id}
-ORDER BY used_when DESC
+ORDER BY used_when DESC;
+"""
+planned_posts_for_date_sql = f"""
+SELECT post_date, chart_date, artist, title, yt_url, country
+FROM "planned_posts"
+WHERE published = False AND post_date = %s;
+"""
+last_planned_post_date_sql = f"""
+SELECT post_date, chart_date
+FROM "planned_posts"
+WHERE published = False and post_date = (
+    SELECT max(post_date) FROM "planned_posts"
+);
+"""
+last_post_date_sql = f"""
+SELECT year, used_when
+FROM "used_years"
+WHERE used_when = (
+    SELECT max(used_when) FROM "used_years"
+);
+"""
+mark_planned_posts_as_published_sql = f"""
+UPDATE planned_posts
+SET published = True
+WHERE post_date = %s;
 """
 used_years_insert_sql = """
  INSERT INTO used_years 
@@ -60,11 +84,16 @@ used_years_insert_sql = """
  VALUES (%s, %s, %s, to_timestamp(%s), %s)
  RETURNING id;
 """
+planned_posts_insert_sql = """
+ INSERT INTO planned_posts 
+ (post_date, chart_date, artist, title, yt_url, country) 
+ VALUES (%s, %s, %s, %s, %s, %s)
+ RETURNING id;
+"""
 used_songs_insert_sql = """
  INSERT INTO songs 
  (artist, title, yt_url, used_year_id, country) 
- VALUES 
- (%s, %s, %s, %s, %s);
+ VALUES (%s, %s, %s, %s, %s);
 """
 conn = pg_conn()
 
@@ -76,7 +105,6 @@ def get_no1_list(chart_date: date):
     with conn.cursor() as curs:
         curs.execute(no1_list_sql, (year, month, day))
         no1_all = curs.fetchall()
-    # print(f"{year}-{str(month).zfill(2)}-{str(day).zfill(2)}")
     return no1_all
 
 
@@ -164,34 +192,128 @@ def get_chat_name(post_answer):
     return post_answer["result"]["chat"]["username"]
 
 
-def process(chat_id):
-    post_date = datetime.now()
+def plan_post(post_date, chart_date, no1_list):
+    for no1 in no1_list:
+        country, week_date, artist, title, yt_url = no1
+        with conn.cursor() as curs:
+            curs.execute(planned_posts_insert_sql, (post_date, chart_date, artist, title, yt_url, country))
+        conn.commit()
+
+
+def get_no1_planned_list(chart_date):
+    with conn.cursor() as curs:
+        curs.execute(planned_posts_for_date_sql, chart_date)
+        planned_list = curs.fetchall()
+    return planned_list
+
+
+def last_planned_post_date():
+    with conn.cursor() as curs:
+        curs.execute(last_planned_post_date_sql)
+        last_planned = curs.fetchone()
+    return last_planned
+
+
+def last_post_date():
+    with conn.cursor() as curs:
+        curs.execute(last_post_date_sql)
+        last_post = curs.fetchone()
+    return last_post
+
+
+def get_last_post_date_for_planning():
+    # Нужно добавить случай, когда обе таблицы пустые и тогда использовать день из параметра (или вчера-сегодня-завтра)
+    last_planned = last_planned_post_date()
+    if last_planned is not None:
+        post_date, chart_date = last_planned
+        return post_date
+    year, used_when = last_post_date()
+    return used_when
+
+
+def get_no1_full_list(chart_date):
+    no1_list = get_no1_list(chart_date)
+    return get_yt_urls(no1_list)
+
+
+def mark_planned_posts_as_published(post_date):
+    with conn.cursor() as curs:
+        curs.execute(mark_planned_posts_as_published_sql, post_date)
+        conn.commit()
+
+
+def make_post(chat_id, post_date: date, use_planned=0):
     chart_year = get_chart_year()
     chart_date = post_date.replace(year=chart_year)
-    no1_list = get_no1_list(chart_date)
-    no1_list_with_yt = get_yt_urls(no1_list)
-    no1_list_str = print_no1_list(no1_list_with_yt)
+    no1_full_list = list()
+    if use_planned == 1:
+        no1_full_list = get_no1_planned_list(chart_date)
+    if len(no1_full_list) == 0 or use_planned == 0:
+        no1_full_list = get_no1_full_list(chart_date)
+    no1_list_str = print_no1_list(no1_full_list)
     message = f"{get_message_head(chart_date)}\n\n{no1_list_str}"
     print(message)
     res = send_message(message, chat_id)
     print(res.text)
     if res.status_code == 200:
         post_answer = get_post_answer(res.text)
-        print(post_answer)
         post_datetime = get_post_datetime(post_answer)
         post_id = get_post_id(post_answer)
         if chat_id != private_chat_id:
             used_year_id = insert_used_year(chart_year, post_date, chat_id, post_datetime, post_id)
-            insert_used_songs(no1_list_with_yt, used_year_id)
+            insert_used_songs(no1_full_list, used_year_id)
+            mark_planned_posts_as_published(post_date)
         if chat_id == group_chat_id:
             chat_name = get_chat_name(post_answer)
             private_message = f"Создан <a href='https://t.me/{chat_name}/{post_id}'>пост</a>"
             send_message(private_message, private_chat_id)
 
 
+def make_planned(from_year, delta):
+    planned_years = get_years_list(from_year=from_year, delta=delta)
+    last_post_date = get_last_post_date_for_planning()
+    post_date: date = last_post_date
+    print("Last Post Date:", last_post_date)
+    for planned_year in planned_years:
+        post_date += timedelta(days=1)
+        chart_date = post_date.replace(year=planned_year)
+        print(chart_date, "\n")
+        no1_full_list = get_no1_full_list(chart_date)
+        print(no1_full_list)
+        print("==========")
+        plan_post(post_date, chart_date, no1_full_list)
+
+
+def process(chat_id):
+    post_date = datetime.now()
+    make_post(chat_id, post_date, use_planned=1)
+
+
+def get_years_list(from_year: int, delta: int):
+    years = list(range(start_year, end_year+1))
+    sh_y = []
+    ly = len(years)
+    ind = years.index(from_year)
+    new_ind = ind
+    while len(sh_y) < ly:
+        i = 0
+        while years[new_ind] in sh_y:
+            new_ind = ind + delta
+            new_ind %= ly
+            i += 1
+            if i > 1000:
+                print("Не получилось создать последовательность лет для отложенного постинга.")
+                print("Попробуйте вызывать get_years_list с параметром delta = 7 или 9 или 11.")
+                return
+        ind = new_ind
+        sh_y.append(years[ind])
+    return sh_y
+
+
 if __name__ == '__main__':
     now = datetime.now()
     # now = datetime(year=1988, month=6, day=18)
-    process(work_chat_id)
+    # process(work_chat_id)
+    make_planned(from_year=1982, delta=9)
 
 
