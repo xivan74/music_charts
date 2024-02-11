@@ -201,10 +201,6 @@ def plan_post(post_date, chart_date, no1_list):
 
 
 def get_no1_planned_list(chart_date: date):
-    ch_date = chart_date.isoformat()
-    print()
-    print(chart_date)
-    print(ch_date)
     with conn.cursor() as curs:
         curs.execute(planned_posts_for_date_sql, [chart_date])
         planned_list = curs.fetchall()
@@ -242,7 +238,7 @@ def get_no1_full_list(chart_date):
 
 def mark_planned_posts_as_published(post_date):
     with conn.cursor() as curs:
-        curs.execute(mark_planned_posts_as_published_sql, post_date)
+        curs.execute(mark_planned_posts_as_published_sql, [post_date])
         conn.commit()
 
 
@@ -251,9 +247,12 @@ def make_post(chat_id, post_date: date, use_planned=0):
     chart_date = post_date.replace(year=chart_year)
     no1_full_list = list()
     if use_planned == 1:
+        print("USE Planned")
         no1_full_list = get_no1_planned_list(chart_date)
     if len(no1_full_list) == 0 or use_planned == 0:
+        print("NOT USE PLANNED")
         no1_full_list = get_no1_full_list(chart_date)
+    print(no1_full_list)
     no1_list_str = print_no1_list(no1_full_list)
     message = f"{get_message_head(chart_date)}\n\n{no1_list_str}"
     print(message)
