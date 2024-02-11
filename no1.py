@@ -203,6 +203,7 @@ def plan_post(post_date, chart_date, no1_list):
 def get_no1_planned_list(chart_date: date):
     with conn.cursor() as curs:
         curs.execute(planned_posts_for_date_sql, [chart_date])
+        print(curs.query)
         planned_list = curs.fetchall()
     return planned_list
 
@@ -251,6 +252,7 @@ def make_post(chat_id, post_date: date, use_planned=0):
         no1_full_list = get_no1_planned_list(chart_date)
     if len(no1_full_list) == 0 or use_planned == 0:
         print("NOT USE PLANNED")
+        return
         no1_full_list = get_no1_full_list(chart_date)
     print(no1_full_list)
     no1_list_str = print_no1_list(no1_full_list)
