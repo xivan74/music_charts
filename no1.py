@@ -202,6 +202,7 @@ def plan_post(post_date, chart_date, no1_list):
 
 def get_no1_planned_list(chart_date: datetime):
     ch_date = chart_date.isoformat()
+    print(ch_date)
     with conn.cursor() as curs:
         curs.execute(planned_posts_for_date_sql, ch_date)
         planned_list = curs.fetchall()
