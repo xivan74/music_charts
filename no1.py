@@ -1,7 +1,7 @@
 import requests
 from db_utils import pg_conn
 from datetime import date, datetime, timedelta
-from random import shuffle, randint
+from random import shuffle
 from youtube_search import YoutubeSearch
 from urllib import parse
 from json import loads
@@ -243,7 +243,7 @@ def mark_planned_posts_as_published(post_date):
         conn.commit()
 
 
-def make_post(chat_id, post_date: date, use_planned=0):
+def make_post(chat_id, post_date: datetime, use_planned=0):
     chart_year = get_chart_year()
     chart_date = post_date.replace(year=chart_year)
     no1_full_list = list()
@@ -252,7 +252,6 @@ def make_post(chat_id, post_date: date, use_planned=0):
         no1_full_list = get_no1_planned_list(post_date)
     if len(no1_full_list) == 0 or use_planned == 0:
         print("NOT USE PLANNED")
-        return
         no1_full_list = get_no1_full_list(chart_date)
     print(no1_full_list)
     no1_list_str = print_no1_list(no1_full_list)
