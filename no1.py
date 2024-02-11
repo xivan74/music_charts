@@ -200,9 +200,10 @@ def plan_post(post_date, chart_date, no1_list):
         conn.commit()
 
 
-def get_no1_planned_list(chart_date):
+def get_no1_planned_list(chart_date: datetime):
+    ch_date = chart_date.isoformat()
     with conn.cursor() as curs:
-        curs.execute(planned_posts_for_date_sql, chart_date)
+        curs.execute(planned_posts_for_date_sql, ch_date)
         planned_list = curs.fetchall()
     return planned_list
 
@@ -277,10 +278,10 @@ def make_planned(from_year, delta):
     for planned_year in planned_years:
         post_date += timedelta(days=1)
         chart_date = post_date.replace(year=planned_year)
-        print(chart_date, "\n")
+        print(chart_date)
         no1_full_list = get_no1_full_list(chart_date)
         print(no1_full_list)
-        print("==========")
+        print("==========\n")
         plan_post(post_date, chart_date, no1_full_list)
 
 
