@@ -57,7 +57,7 @@ ORDER BY used_when DESC;
 planned_posts_for_date_sql = f"""
 SELECT post_date, chart_date, artist, title, yt_url, country
 FROM "planned_posts"
-WHERE published = False AND post_date = "%s";
+WHERE published = False AND post_date = '%s';
 """
 last_planned_post_date_sql = f"""
 SELECT post_date, chart_date
@@ -201,7 +201,7 @@ def plan_post(post_date, chart_date, no1_list):
 
 
 def get_no1_planned_list(chart_date: date):
-    ch_date = chart_date.isoformat()
+    ch_date = chart_date.strftime("")
     print()
     print(chart_date)
     print(ch_date)
