@@ -200,9 +200,9 @@ def plan_post(post_date, chart_date, no1_list):
         conn.commit()
 
 
-def get_no1_planned_list(post_date: date):
+def get_no1_planned_list(post_date: datetime):
     with conn.cursor() as curs:
-        curs.execute(planned_posts_for_date_sql, [post_date])
+        curs.execute(planned_posts_for_date_sql, [post_date.date()])
         print(curs.query)
         planned_list = curs.fetchall()
     return planned_list
