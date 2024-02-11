@@ -11,7 +11,7 @@ chat_id = group_chat_id
 
 
 if __name__ == '__main__':
-    time_to_publish = "16:05"
+    time_to_publish = "16:08"
     tz_to_publish = "UTC"
     print("Запускаем расписание.")
     schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)

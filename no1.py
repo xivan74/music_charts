@@ -203,7 +203,6 @@ def plan_post(post_date, chart_date, no1_list):
 def get_no1_planned_list(post_date: datetime):
     with conn.cursor() as curs:
         curs.execute(planned_posts_for_date_sql, [post_date.date()])
-        print(curs.query)
         planned_list = curs.fetchall()
     return planned_list
 
@@ -240,7 +239,8 @@ def get_no1_full_list(chart_date):
 def mark_planned_posts_as_published(post_date):
     with conn.cursor() as curs:
         curs.execute(mark_planned_posts_as_published_sql, [post_date])
-        conn.commit()
+        print(curs.query)
+    conn.commit()
 
 
 def make_post(chat_id, post_date: datetime, use_planned=0):
