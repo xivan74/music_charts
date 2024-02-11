@@ -200,7 +200,7 @@ def plan_post(post_date, chart_date, no1_list):
         conn.commit()
 
 
-def get_no1_planned_list(chart_date: datetime):
+def get_no1_planned_list(chart_date: date):
     ch_date = chart_date.isoformat()
     print(ch_date)
     with conn.cursor() as curs:
