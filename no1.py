@@ -57,7 +57,7 @@ ORDER BY used_when DESC;
 planned_posts_for_date_sql = f"""
 SELECT post_date, chart_date, artist, title, yt_url, country
 FROM "planned_posts"
-WHERE published = False AND post_date = %s;
+WHERE published = False AND post_date = "%s";
 """
 last_planned_post_date_sql = f"""
 SELECT post_date, chart_date
