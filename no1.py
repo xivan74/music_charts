@@ -238,7 +238,7 @@ def get_no1_full_list(chart_date):
 
 def mark_planned_posts_as_published(post_date):
     with conn.cursor() as curs:
-        curs.execute(mark_planned_posts_as_published_sql, [post_date])
+        curs.execute(mark_planned_posts_as_published_sql, [post_date.date()])
         print(curs.query)
     conn.commit()
 
