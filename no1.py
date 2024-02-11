@@ -244,15 +244,18 @@ def mark_planned_posts_as_published(post_date):
 
 
 def make_post(chat_id, post_date: datetime, use_planned=0):
-    chart_year = get_chart_year()
-    chart_date = post_date.replace(year=chart_year)
     no1_full_list = list()
     if use_planned == 1:
         print("USE Planned")
         no1_full_list = get_no1_planned_list(post_date)
-    if len(no1_full_list) == 0 or use_planned == 0:
+        chart_date = no1_full_list[0][1]
+    elif len(no1_full_list) == 0 or use_planned == 0:
         print("NOT USE PLANNED")
+        chart_year = get_chart_year()
+        chart_date = post_date.replace(year=chart_year)
         no1_full_list = get_no1_full_list(chart_date)
+    else:
+        return
     print(no1_full_list)
     no1_list_str = print_no1_list(no1_full_list)
     message = f"{get_message_head(chart_date)}\n\n{no1_list_str}"
