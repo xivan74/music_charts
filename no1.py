@@ -55,7 +55,7 @@ WHERE used_in_chat = {group_chat_id}
 ORDER BY used_when DESC;
 """
 planned_posts_for_date_sql = f"""
-SELECT post_date, chart_date, artist, title, yt_url, country
+SELECT country, chart_date, artist, title, yt_url
 FROM "planned_posts"
 WHERE published = False AND post_date = %s;
 """
