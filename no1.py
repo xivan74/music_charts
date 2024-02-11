@@ -249,6 +249,7 @@ def make_post(chat_id, post_date: datetime, use_planned=0):
         print("USE Planned")
         no1_full_list = get_no1_planned_list(post_date)
         chart_date = no1_full_list[0][1]
+        chart_year = chart_date.year
     elif len(no1_full_list) == 0 or use_planned == 0:
         print("NOT USE PLANNED")
         chart_year = get_chart_year()
@@ -322,5 +323,3 @@ if __name__ == '__main__':
     # now = datetime(year=1988, month=6, day=18)
     # process(work_chat_id)
     make_planned(from_year=1982, delta=9)
-
-
