@@ -1,5 +1,5 @@
 import time
-
+from datetime import date
 from no1 import process
 import schedule
 
@@ -11,10 +11,11 @@ chat_id = group_chat_id
 
 
 if __name__ == '__main__':
-    time_to_publish = "13:59"
+    time_to_publish = "6:59"
     tz_to_publish = "UTC"
     print("Запускаем расписание.")
-    schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id)
+    tmp_pd = date(year=2024, month=2, day=13)
+    schedule.every().day.at(time_to_publish, tz_to_publish).do(process, chat_id=chat_id, post_date=tmp_pd)
     while True:
         time.sleep(1)
         time_of_next_run = schedule.next_run()
