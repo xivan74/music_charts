@@ -204,6 +204,7 @@ def get_no1_planned_list(post_date: datetime):
     with conn.cursor() as curs:
         curs.execute(planned_posts_for_date_sql, [post_date.date()])
         planned_list = curs.fetchall()
+    print(curs.query)
     return planned_list
 
 
