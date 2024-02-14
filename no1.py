@@ -272,11 +272,11 @@ def make_post(chat_id, post_date: datetime, use_planned=0):
         if chat_id != private_chat_id:
             used_year_id = insert_used_year(chart_year, post_date, chat_id, post_datetime, post_id)
             insert_used_songs(no1_full_list, used_year_id)
-            mark_planned_posts_as_published(post_date)
         if chat_id == group_chat_id:
             chat_name = get_chat_name(post_answer)
             private_message = f"Создан <a href='https://t.me/{chat_name}/{post_id}'>пост</a>"
             send_message(private_message, private_chat_id)
+            mark_planned_posts_as_published(post_date)
 
 
 def make_planned(from_year, delta):
