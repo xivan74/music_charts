@@ -11,7 +11,7 @@ chat_id = group_chat_id
 
 
 if __name__ == '__main__':
-    time_to_publish = "14:10"
+    time_to_publish = "14:00"
     tz_to_publish = "UTC"
     print("Запускаем расписание.")
     # tmp_pd = datetime(year=2024, month=2, day=13)
