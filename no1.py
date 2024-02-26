@@ -327,7 +327,7 @@ if __name__ == '__main__':
     # process(work_chat_id)
     # make_planned(from_year=1982, delta=9)
     i = 0
-    while i < 7:
+    while i < 17:
         make_post(work_chat_id, now, use_planned=1)
         now += timedelta(days=1)
         i += 1
