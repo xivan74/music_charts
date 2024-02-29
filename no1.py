@@ -322,12 +322,12 @@ def get_years_list(from_year: int, delta: int):
 
 
 if __name__ == '__main__':
-    now = datetime.now()
+    now = datetime(year=2024, month=3, day=9)
     # now = datetime(year=1988, month=6, day=18)
     # process(work_chat_id)
     # make_planned(from_year=1982, delta=9)
     i = 0
-    while i < 17:
+    while i < 15:
         make_post(work_chat_id, now, use_planned=1)
         now += timedelta(days=1)
         i += 1
