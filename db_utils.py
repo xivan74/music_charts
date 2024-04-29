@@ -3,8 +3,10 @@ from sqlalchemy import create_engine, Table, Column, Integer, String, \
 from sqlalchemy.orm import sessionmaker, registry, relationship
 from data_types import ChartItem, No1Item
 import psycopg2
+from config import db_url
+from config import db_url2
+import sqlite3
 
-db_url = 'postgresql://postgres:112233@192.168.0.190:5432/charts'
 engine = create_engine(db_url, echo=False)
 Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 session = Session()
@@ -69,5 +71,10 @@ def insert_records(table: Table, data: list[ChartItem]):
 
 def pg_conn():
     return psycopg2.connect(db_url)
+
+
+def db_conn():
+    # для подключения к sqlite3
+    return sqlite3.connect(db_url2)
 
 

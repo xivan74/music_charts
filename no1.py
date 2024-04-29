@@ -1,11 +1,14 @@
+import os
+
 import requests
 from db_utils import pg_conn
 from datetime import date, datetime, timedelta
 from random import shuffle
-from youtube_search import YoutubeSearch
+from youtube_search import YoutubeSearch, urllib
 from urllib import parse
 from json import loads
 
+BASE_YT_URL = "https://youtube.com"
 start_year = 1955
 end_year = 2000
 russian_month = ["января", "февраля", "марта", "апреля", "мая", "июня",
@@ -23,8 +26,7 @@ countries = {
     "Russia": {"emoji": "🇷🇺", "rus": "Россия"}
 }
 
-# super_bot_key = os.getenv('SUPER_BOT_KEY')
-super_bot_key = "6577858071:AAEzOUDahiaVHO0D_tT8bALNG_NNadN6pMM"
+post_bot_key = os.getenv('MUSIC_POST_BOT_KEY')
 notif_session = requests.Session()
 private_chat_id = "242137500"
 group_chat_id = "-1002082261665"
@@ -108,21 +110,22 @@ def get_no1_list(chart_date: date):
     return no1_all
 
 
-def get_yt_urls(no1_list: list[tuple]):
+def get_yt_urls(no1_list: list[tuple], search_page: bool = False):
     new_no1_list = []
     for no1 in no1_list:
         country, week_date, artist, title = no1
         yt_url = get_yt_url(artist, title)
-        new_no1_list.append((country, week_date, artist.upper(), title, yt_url))
+        yt_search_url = get_yt_search_url(artist, title)
+        new_no1_list.append((country, week_date, artist.upper(), title, yt_url, yt_search_url))
     return new_no1_list
 
 
 def print_no1_list(no1_list):
     no1_list_str = ""
     for no1 in no1_list:
-        country, week_date, artist, title, yt_url = no1
+        country, week_date, artist, title, yt_url, yt_search_url = no1
         song = f"{artist} - {title}"
-        yt_link = f"<a href='{yt_url}'>{song}</a>"
+        yt_link = f"<a href='{yt_url}'>{song}</a> (<a href='{yt_search_url}'>найти другой клип</a>)"
         no1_row = f"{countries[country]['emoji']} <b>{countries[country]['rus']} |</b> {yt_link}"
         no1_list_str += f"{no1_row}\n"
     return no1_list_str
@@ -131,10 +134,17 @@ def print_no1_list(no1_list):
 def get_yt_url(artist, title):
     search_string = f"{artist} - {title}"
     results = YoutubeSearch(search_string, max_results=1).to_dict()
-    return f"https://www.youtube.com/watch?v={results[0]['id']}"
+    return f"{BASE_YT_URL}/watch?v={results[0]['id']}"
+
+
+def get_yt_search_url(artist, title):
+    search_string = f"{artist} - {title}"
+    encoded_search = urllib.parse.quote_plus(search_string)
+    return f"{BASE_YT_URL}/results?search_query={encoded_search}"
 
 
 def get_chart_year():
+    # очень кривая реализация, нужна доработка
     repeat_after = 30
     all_years = set(range(start_year, end_year + 1))
     with conn.cursor() as curs:
@@ -150,19 +160,20 @@ def get_chart_year():
 
 def send_message(text, chat_id):
     encoded_text = parse.quote(text)
-    notif_full_url = post_url.format(BOT_KEY=super_bot_key, CHAT_ID=chat_id, TEXT=encoded_text)
+    notif_full_url = post_url.format(BOT_KEY=post_bot_key, CHAT_ID=chat_id, TEXT=encoded_text)
     return notif_session.get(notif_full_url, timeout=5)
 
 
 def get_message_head(chart_date: date):
-    message = f"<b>{chart_date.day} {russian_month[chart_date.month-1]} {chart_date.year} года | Лидеры хит-парадов</b>"
+    message = (f"<b>{chart_date.day} {russian_month[chart_date.month - 1]} {chart_date.year} года | Лидеры "
+               f"хит-парадов разных стран в этот день</b>")
     return message
 
 
 def insert_used_songs(no1_list, used_year_id):
     with conn.cursor() as curs:
         for no1 in no1_list:
-            country, week_date, artist, title, yt_url = no1
+            country, week_date, artist, title, yt_url, yt_search_url = no1
             curs.execute(used_songs_insert_sql, (artist, title, yt_url, used_year_id, country))
     conn.commit()
 
@@ -204,7 +215,6 @@ def get_no1_planned_list(post_date: datetime):
     with conn.cursor() as curs:
         curs.execute(planned_posts_for_date_sql, [post_date.date()])
         planned_list = curs.fetchall()
-    print(curs.query)
     return planned_list
 
 
@@ -234,21 +244,46 @@ def get_last_post_date_for_planning():
 
 def get_no1_full_list(chart_date):
     no1_list = get_no1_list(chart_date)
-    return get_yt_urls(no1_list)
+    return get_yt_urls(no1_list, search_page=False)
+
+
+def get_no1_full_list_plus_yt_search(chart_date):
+    no1_list = get_no1_list(chart_date)
+    return get_yt_urls(no1_list, search_page=True)
 
 
 def mark_planned_posts_as_published(post_date):
     with conn.cursor() as curs:
         curs.execute(mark_planned_posts_as_published_sql, [post_date.date()])
-        print(curs.query)
     conn.commit()
 
 
-def make_post(chat_id, post_date: datetime, use_planned=0):
+def get_no1_list_text(chart_date: datetime, no1_full_list):
+    no1_list_str = print_no1_list(no1_full_list)
+    head = get_message_head(chart_date)
+    footer = "<b>♪ <a href='https://t.me/best_20_century_hits'>@best_20_century_hits</a> ♪</b>"
+    message = f"{head}\n\n{no1_list_str}\n{footer}"
+    return message
+
+
+def add_yt_search_url_to_list(no1_list: list[tuple]):
+    no1_new_list = []
+    for no1 in no1_list:
+        if len(no1) == 5:
+            country, week_date, artist, title, yt_url = no1
+            yt_search_url = get_yt_search_url(artist, title)
+            no1 = (country, week_date, artist, title, yt_url, yt_search_url)
+            no1_new_list.append(no1)
+    return no1_new_list
+
+
+def make_post(chat_id, post_date: datetime, use_planned=1):
     no1_full_list = list()
     if use_planned == 1:
         print("USE Planned")
-        no1_full_list = get_no1_planned_list(post_date)
+        no1_list = get_no1_planned_list(post_date)
+        no1_full_list = add_yt_search_url_to_list(no1_list)
+
         print(no1_full_list)
         chart_date = no1_full_list[0][1]
         chart_year = chart_date.year
@@ -260,8 +295,8 @@ def make_post(chat_id, post_date: datetime, use_planned=0):
     else:
         return
     print(no1_full_list)
-    no1_list_str = print_no1_list(no1_full_list)
-    message = f"{get_message_head(chart_date)}\n\n{no1_list_str}"
+
+    message = get_no1_list_text(chart_date, no1_full_list)
     print(message)
     res = send_message(message, chat_id)
     print(res.text)
@@ -301,7 +336,7 @@ def process(chat_id, post_date=""):
 
 
 def get_years_list(from_year: int, delta: int):
-    years = list(range(start_year, end_year+1))
+    years = list(range(start_year, end_year + 1))
     sh_y = []
     ly = len(years)
     ind = years.index(from_year)
@@ -321,13 +356,65 @@ def get_years_list(from_year: int, delta: int):
     return sh_y
 
 
-if __name__ == '__main__':
-    now = datetime(year=2024, month=3, day=9)
-    # now = datetime(year=1988, month=6, day=18)
-    # process(work_chat_id)
-    # make_planned(from_year=1982, delta=9)
+def correct_panned(post_date: datetime):
+    """
+    На самом деле функция ничего не исправляет.
+    Она только сообщает о различиях между запланированным постом и чартом
+    Исправление этого различия не реализовано
+
+    Возвращает 0, когда нет запланированного поста на дату from_date
+
+    :param from_date:
+    :return:
+    """
+    planned_list = get_no1_planned_list(post_date)
+    if len(planned_list) == 0:
+        return 0
+    planned_dict = {}
+    chart_date = post_date
+    for planned in planned_list:
+        planned_dict[planned[0]] = {}
+        chart_date = planned[1]
+        planned_dict[planned[0]]["artist"] = planned[2]
+        planned_dict[planned[0]]["title"] = planned[3]
+
+    no1_list = get_no1_list(chart_date)
+    print(f"Planned {post_date.date()}. NO 1 List to {chart_date}:\n")
+    no1_dict = {}
+    for no1 in no1_list:
+        no1_dict[no1[0]] = {}
+        no1_dict[no1[0]]["artist"] = no1[2].upper()
+        no1_dict[no1[0]]["title"] = no1[3]
+
+    for country, no1_item in no1_dict.items():
+        if no1_item["artist"] != planned_dict[country]["artist"] or no1_item["title"] != planned_dict[country]["title"]:
+            print("НЕ СОВПАДАЮТ ДАННЫЕ!", post_date.date(), country)
+            print("Planned:", planned_dict[country]["artist"], planned_dict[country]["title"])
+            print("No 1:", no1_item["artist"], no1_item["title"])
+
+    return 1
+
+
+def correct_all_planned(start_date: datetime):
+    now = start_date
+    res = 1
+    while res == 1:
+        res = correct_panned(now)
+        now += timedelta(days=1)
+
+
+def send_planned_to_chat(now: datetime):
     i = 0
-    while i < 15:
+    while i < 1:
         make_post(work_chat_id, now, use_planned=1)
         now += timedelta(days=1)
         i += 1
+
+
+if __name__ == '__main__':
+    now = datetime(year=2024, month=4, day=29)
+    # years_list = get_years_list(from_year=1982, delta=9)
+    # print(years_list)
+    # make_planned(from_year=1963, delta=9)
+    # correct_all_planned(now)
+    send_planned_to_chat(now)
