@@ -1,10 +1,11 @@
+import os.path
+
 from sqlalchemy import create_engine, Table, Column, Integer, String, \
     Date, Boolean, insert, update, delete
 from sqlalchemy.orm import sessionmaker, registry, relationship
 from data_types import ChartItem, No1Item
 import psycopg2
-from config import db_url
-from config import db_url2
+from config import db_url, db_url2, BASE_DIR
 import sqlite3
 
 engine = create_engine(db_url, echo=False)
@@ -75,6 +76,7 @@ def pg_conn():
 
 def db_conn():
     # для подключения к sqlite3
-    return sqlite3.connect(db_url2)
+    db_file = os.path.join(BASE_DIR, db_url2)
+    return sqlite3.connect(db_file)
 
 

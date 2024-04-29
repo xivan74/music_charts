@@ -1,7 +1,9 @@
 psycopg2-binary==2.9.9
-pydantic==2.6.0
+pydantic==2.6.4
 requests==2.31.0
 schedule==1.2.1
-SQLAlchemy==2.0.25
-urllib3==2.2.0
+SQLAlchemy==2.0.29
+urllib3==2.2.1
 youtube-search==2.1.2
+python-telegram-bot==21.0.1
+pip install --ignore-installed -r requirements.txt
