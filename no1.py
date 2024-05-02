@@ -260,9 +260,12 @@ def mark_planned_posts_as_published(post_date):
 
 def get_no1_list_text(chart_date: datetime, no1_full_list):
     no1_list_str = print_no1_list(no1_full_list)
-    head = get_message_head(chart_date)
+    bot_string = "Лидеры хит-парадов за любой день с 1956 по 2000 год"
+    bot_link = "https://t.me/best_20_century_hits_bot"
+    bot_string = f"♫ <a href='{bot_link}'>{bot_string}</a> ♫"
+    head = f"{get_message_head(chart_date)}\n\n{bot_string}"
     footer = "<b>♪ <a href='https://t.me/best_20_century_hits'>@best_20_century_hits</a> ♪</b>"
-    message = f"{head}\n\n{no1_list_str}\n{footer}"
+    message = f"{head}\n\n{no1_list_str}\n{bot_string}\n\n{footer}"
     return message
 
 
@@ -412,7 +415,7 @@ def send_planned_to_chat(now: datetime):
 
 
 if __name__ == '__main__':
-    now = datetime(year=2024, month=4, day=29)
+    now = datetime(year=2024, month=5, day=3)
     # years_list = get_years_list(from_year=1982, delta=9)
     # print(years_list)
     # make_planned(from_year=1963, delta=9)
