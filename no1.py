@@ -260,7 +260,7 @@ def mark_planned_posts_as_published(post_date):
 
 def get_no1_list_text(chart_date: datetime, no1_full_list):
     no1_list_str = print_no1_list(no1_full_list)
-    bot_string = "Лидеры хит-парадов за любой день с 1956 по 2000 год"
+    bot_string = "Получи СВОЙ список лидеров хит-парадов за ЛЮБОЙ ДЕНЬ"
     bot_link = "https://t.me/best_20_century_hits_bot"
     bot_string = f"♫ <a href='{bot_link}'>{bot_string}</a> ♫"
     head = f"{get_message_head(chart_date)}\n\n{bot_string}"
