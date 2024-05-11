@@ -205,7 +205,7 @@ def get_chat_name(post_answer):
 
 def plan_post(post_date, chart_date, no1_list):
     for no1 in no1_list:
-        country, week_date, artist, title, yt_url = no1
+        country, week_date, artist, title, yt_url, yt_search_url = no1
         with conn.cursor() as curs:
             curs.execute(planned_posts_insert_sql, (post_date, chart_date, artist, title, yt_url, country))
         conn.commit()
@@ -258,14 +258,21 @@ def mark_planned_posts_as_published(post_date):
     conn.commit()
 
 
-def get_no1_list_text(chart_date: datetime, no1_full_list):
+def get_no1_list_text(chart_date: datetime, no1_full_list, source="bot"):
     no1_list_str = print_no1_list(no1_full_list)
-    bot_string = "Получи <b>СВОЙ</b> список лидеров хит-парадов за <b>ЛЮБОЙ ДЕНЬ</b>"
-    bot_link = "https://t.me/best_20_century_hits_bot"
-    bot_string = f"♫ <tg-spoiler><a href='{bot_link}'>{bot_string}</a></tg-spoiler> ♫"
-    head = f"{get_message_head(chart_date)}\n\n{bot_string}"
+    if source == "bot":
+        bot_string = "Хочешь за 500 рублей свой клип по этим песням?"
+        bot_link = "https://www.donationalerts.com/r/best20centurymusic"
+        bottom_string = f"♫ <tg-spoiler><a href='{bot_link}'>{bot_string}</a></tg-spoiler> ♫"
+        top_string = bottom_string
+    else:
+        bot_string = "Получи <b>СВОЙ</b> список лидеров хит-парадов за <b>ЛЮБОЙ ДЕНЬ</b>"
+        bot_link = "https://t.me/best_20_century_hits_bot"
+        bottom_string = f"♫ <tg-spoiler><a href='{bot_link}'>{bot_string}</a></tg-spoiler> ♫"
+        top_string = bottom_string
+    head = f"{get_message_head(chart_date)}\n\n{top_string}"
     footer = "<b>♪ <a href='https://t.me/best_20_century_hits'>@best_20_century_hits</a> ♪</b>"
-    message = f"{head}\n\n{no1_list_str}\n{bot_string}\n\n{footer}"
+    message = f"{head}\n\n{no1_list_str}\n{bottom_string}\n\n{footer}"
     return message
 
 
@@ -299,7 +306,7 @@ def make_post(chat_id, post_date: datetime, use_planned=1):
         return
     print(no1_full_list)
 
-    message = get_no1_list_text(chart_date, no1_full_list)
+    message = get_no1_list_text(chart_date, no1_full_list, source="group")
     print(message)
     res = send_message(message, chat_id)
     print(res.text)
@@ -415,8 +422,8 @@ def send_planned_to_chat(now: datetime):
 
 
 if __name__ == '__main__':
-    now = datetime(year=2024, month=5, day=6)
-    # years_list = get_years_list(from_year=1982, delta=9)
+    now = datetime(year=2024, month=5, day=12)
+    # years_list = get_years_list(from_year=1963, delta=9)
     # print(years_list)
     # make_planned(from_year=1963, delta=9)
     # correct_all_planned(now)

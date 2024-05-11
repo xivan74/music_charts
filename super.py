@@ -36,7 +36,7 @@ help_message_text = f"""Бот выводит список лидеров хит
 Для использования бота нужно:
 1️⃣ быть подписанным на канал <b>@best_20_century_hits</b>.
 2️⃣ начать работу с ботом
-3️⃣ ввести дату в формате ДД.ММ.ГГГГ. Например, <b>03.09.1989</b>. 
+3️⃣ ввести дату в формате "<b>ДД.ММ.ГГГГ</b>". Например, <b>03.09.1989</b> (в конце точка не нужна). 
 Через некоторое время появится список песен со ссылками на youtube.
 
 Если остались вопросы, пишите <tg-spoiler>@{config.admin_login}</tg-spoiler>.
@@ -117,7 +117,7 @@ async def user_subscribed(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 def get_no1_list_by_date(chart_date: datetime.date):
-    return get_no1_list_text(chart_date, get_no1_full_list(chart_date))
+    return get_no1_list_text(chart_date, get_no1_full_list(chart_date), source="bot")
 
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
