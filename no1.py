@@ -1,4 +1,5 @@
 import os
+import time
 
 import requests
 from db_utils import pg_conn
@@ -32,6 +33,7 @@ private_chat_id = "242137500"
 group_chat_id = "-1002082261665"
 work_chat_id = "-4158012020"
 post_url = "https://api.telegram.org/bot{BOT_KEY}/sendMessage?chat_id={CHAT_ID}&text={TEXT}&parse_mode=HTML"
+poll_url = "https://api.telegram.org/bot{BOT_KEY}/sendPoll?chat_id={CHAT_ID}&question={QSTN}&question_parse_mode=HTML"
 
 no1_list_sql = """
 SELECT t.country, t.week_date, t.artist, t.title
@@ -120,15 +122,32 @@ def get_yt_urls(no1_list: list[tuple], search_page: bool = False):
     return new_no1_list
 
 
-def print_no1_list(no1_list):
-    no1_list_str = ""
+def print_no1_list(no1_list: list):
+    no1_str_list = get_no1_str_list(no1_list)
+    print(no1_str_list)
+    return "\n".join(no1_str_list)
+
+
+def get_no1_str_list(no1_list):
+    no1_str_list = []
     for no1 in no1_list:
         country, week_date, artist, title, yt_url, yt_search_url = no1
         song = f"{artist} - {title}"
         yt_link = f"<a href='{yt_url}'>{song}</a> (<a href='{yt_search_url}'>найти другой клип</a>)"
         no1_row = f"{countries[country]['emoji']} <b>{countries[country]['rus']} |</b> {yt_link}"
-        no1_list_str += f"{no1_row}\n"
-    return no1_list_str
+        no1_str_list.append(no1_row)
+    return no1_str_list
+
+
+def get_no1_str_short_list(no1_list):
+    no1_str_list = []
+    for no1 in no1_list:
+        country, week_date, artist, title, yt_url, yt_search_url = no1
+        song = f"{artist} - {title}"
+        # yt_link = f"<a href='{yt_url}'>{song}</a> (<a href='{yt_search_url}'>найти другой клип</a>)"
+        # no1_row = f"{countries[country]['emoji']} <b>{countries[country]['rus']} |</b> {yt_link}"
+        no1_str_list.append(song[:100])
+    return no1_str_list
 
 
 def get_yt_url(artist, title):
@@ -161,7 +180,16 @@ def get_chart_year():
 def send_message(text, chat_id):
     encoded_text = parse.quote(text)
     notif_full_url = post_url.format(BOT_KEY=post_bot_key, CHAT_ID=chat_id, TEXT=encoded_text)
-    return notif_session.get(notif_full_url, timeout=5)
+    return notif_session.get(notif_full_url, timeout=30)
+
+
+def send_poll(question_text, chat_id, poll_options):
+    encoded_text = parse.quote(question_text)
+    poll_full_url = poll_url.format(BOT_KEY=post_bot_key, CHAT_ID=chat_id, QSTN=encoded_text)
+    parsed_poll_options = [parse.quote(poll_option) for poll_option in poll_options]
+    poll_full_url += f"&options={parsed_poll_options}".replace("'", "\"")
+    print(poll_full_url)
+    return notif_session.get(poll_full_url, timeout=30)
 
 
 def get_message_head(chart_date: date):
@@ -276,6 +304,11 @@ def get_no1_list_text(chart_date: datetime, no1_full_list, source="bot"):
     return message
 
 
+def get_no1_list_poll(chart_date: datetime, no1_full_list):
+    no1_list_str = get_no1_str_short_list(no1_full_list)
+    return no1_list_str
+
+
 def add_yt_search_url_to_list(no1_list: list[tuple]):
     no1_new_list = []
     for no1 in no1_list:
@@ -287,7 +320,7 @@ def add_yt_search_url_to_list(no1_list: list[tuple]):
     return no1_new_list
 
 
-def make_post(chat_id, post_date: datetime, use_planned=1):
+def make_post(chat_id, post_date: datetime, use_planned=1, create_poll=False):
     no1_full_list = list()
     if use_planned == 1:
         print("USE Planned")
@@ -308,10 +341,12 @@ def make_post(chat_id, post_date: datetime, use_planned=1):
 
     message = get_no1_list_text(chart_date, no1_full_list, source="group")
     print(message)
-    res = send_message(message, chat_id)
-    print(res.text)
-    if res.status_code == 200:
-        post_answer = get_post_answer(res.text)
+    poll_items = get_no1_list_poll(chart_date, no1_full_list)
+    poll_question = f"Выбери лучшую песню среди лидеров хит-парадов {chart_date}"
+    mess_send_res = send_message(message, chat_id)
+    print(mess_send_res.text)
+    if mess_send_res.status_code == 200:
+        post_answer = get_post_answer(mess_send_res.text)
         post_datetime = get_post_datetime(post_answer)
         post_id = get_post_id(post_answer)
         if chat_id != private_chat_id:
@@ -322,6 +357,8 @@ def make_post(chat_id, post_date: datetime, use_planned=1):
             private_message = f"Создан <a href='https://t.me/{chat_name}/{post_id}'>пост</a>"
             send_message(private_message, private_chat_id)
             mark_planned_posts_as_published(post_date)
+    if create_poll:
+        send_poll(poll_question, chat_id, poll_items)
 
 
 def make_planned(from_year, delta):
@@ -413,18 +450,19 @@ def correct_all_planned(start_date: datetime):
         now += timedelta(days=1)
 
 
-def send_planned_to_chat(now: datetime):
+def send_planned_to_chat(now: datetime, days: int):
     i = 0
-    while i < 1:
-        make_post(work_chat_id, now, use_planned=1)
+    while i < days:
+        make_post(work_chat_id, now, use_planned=1, create_poll=False)
         now += timedelta(days=1)
         i += 1
+        time.sleep(2)
 
 
 if __name__ == '__main__':
-    now = datetime(year=2024, month=5, day=12)
+    now = datetime(year=2024, month=7, day=1)
     # years_list = get_years_list(from_year=1963, delta=9)
     # print(years_list)
     # make_planned(from_year=1963, delta=9)
     # correct_all_planned(now)
-    send_planned_to_chat(now)
+    send_planned_to_chat(now, days=7)
