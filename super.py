@@ -128,7 +128,7 @@ def get_no1_list_by_date(chart_date: datetime.date):
 def get_user_answers_num(user_id):
     with db_conn() as conn:
         cur = conn.cursor()
-        cur.execute(count_correct_answers_num_sql, user_id)
+        cur.execute(count_correct_answers_num_sql, (user_id,))
     result = cur.fetchone()[0]
     print("У вас уже", result, "запросов сегодня")
     return result
