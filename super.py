@@ -32,6 +32,11 @@ bot_messages_logs_insert_sql = """
  VALUES (?, ?, ?, ?, ?, ?, ?)
 """
 
+count_correct_answers_num = """
+SELECT count(*) FROM bot_messages_logs
+WHERE user_id = ? AND date(action_time) = date() AND action = "no1_list";
+"""
+
 help_message_text = f"""Бот выводит список лидеров хит-парадов разных стран за любой день <b>с 1956 по 2000 год</b>. 
 Для использования бота нужно:
 1️⃣ быть подписанным на канал <b>@best_20_century_hits</b>.
@@ -120,8 +125,18 @@ def get_no1_list_by_date(chart_date: datetime.date):
     return get_no1_list_text(chart_date, get_no1_full_list(chart_date), source="bot")
 
 
+def get_user_answers_num(user_id):
+    with db_conn() as conn:
+        cur = conn.cursor()
+        cur.execute(bot_messages_logs_insert_sql, user_id)
+    result = cur.fetchone()[0]
+    print("У вас уже", result, "запросов сегодня")
+    return result
+
+
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # now = datetime(year=1974, month=6, day=26)
+    max_num_of_correct_answers_per_day = 5
     try:
         user_is_bot = update.message.from_user.is_bot
     except AttributeError:
@@ -134,8 +149,15 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.message.from_user.name
     wrong_date_text = "Не удалось распознать дату. Введите дату в формате ДД.ММ.ГГГГ. Например, <b>03.09.1989</b>."
     big_small_date_text = "Дата должна быть в промежутке <b>с 1956 по 2000 год</b>."
+    max_num_answers_text = (f"Вы уже получили <b>{max_num_of_correct_answers_per_day} ответов</b> бота сегодня. "
+                           f"Возвращайтесь завтра за новыми ответами.")
     text = update.message.text
     chart_date = str_is_date(text)
+    user_answers_num = get_user_answers_num(update.message.from_user.id)
+    if user_answers_num >= 5:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=max_num_answers_text, parse_mode="HTML")
+        insert_event(update.message.from_user, text, max_num_answers_text, "max_num_answers")
+        return
     if not chart_date:
         await context.bot.send_message(chat_id=update.effective_chat.id, text=wrong_date_text, parse_mode="HTML")
         insert_event(update.message.from_user, text, wrong_date_text, "wrong_date")

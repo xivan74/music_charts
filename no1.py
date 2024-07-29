@@ -460,7 +460,7 @@ def send_planned_to_chat(now: datetime, days: int):
 
 
 if __name__ == '__main__':
-    now = datetime(year=2024, month=7, day=1)
+    now = datetime(year=2024, month=8, day=19)
     # years_list = get_years_list(from_year=1963, delta=9)
     # print(years_list)
     # make_planned(from_year=1963, delta=9)
