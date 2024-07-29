@@ -42,9 +42,10 @@ help_message_text = f"""Бот выводит список лидеров хит
 1️⃣ быть подписанным на канал <b>@best_20_century_hits</b>.
 2️⃣ начать работу с ботом
 3️⃣ ввести дату в формате "<b>ДД.ММ.ГГГГ</b>". Например, <b>03.09.1989</b> (в конце точка не нужна). 
-Через некоторое время появится список песен со ссылками на youtube.
+⏳ Через некоторое время появится список песен со ссылками на youtube. 
+⛔️ В день можно делать <b>не больше 5 запросов</b>.
 
-Если остались вопросы, пишите <tg-spoiler>@{config.admin_login}</tg-spoiler>.
+❓ Если остались вопросы, пишите <tg-spoiler>@{config.admin_login}</tg-spoiler>.
 """
 
 bot_message_text = "Ботам запрещено здесь находиться"
@@ -130,7 +131,7 @@ def get_user_answers_num(user_id):
         cur = conn.cursor()
         cur.execute(count_correct_answers_num_sql, (user_id,))
     result = cur.fetchone()[0]
-    print("У вас уже", result, "запросов сегодня")
+    print(f"{user_id}: y вас уже {result} запросов сегодня")
     return result
 
 
