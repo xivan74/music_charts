@@ -150,8 +150,8 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_name = update.message.from_user.name
     wrong_date_text = "Не удалось распознать дату. Введите дату в формате ДД.ММ.ГГГГ. Например, <b>03.09.1989</b>."
     big_small_date_text = "Дата должна быть в промежутке <b>с 1956 по 2000 год</b>."
-    max_num_answers_text = (f"Вы уже получили <b>{max_num_of_correct_answers_per_day} ответов</b> бота сегодня. "
-                           f"Возвращайтесь завтра за новыми ответами.")
+    max_num_answers_text = (f"{user_1_name}, вы уже получили <b>{max_num_of_correct_answers_per_day} ответов</b> "
+                            f"бота сегодня. Возвращайтесь завтра за новыми ответами.")
     text = update.message.text
     chart_date = str_is_date(text)
     user_answers_num = get_user_answers_num(update.message.from_user.id)
