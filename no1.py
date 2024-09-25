@@ -349,10 +349,9 @@ def make_post(chat_id, post_date: datetime, use_planned=1, create_poll=False):
         post_answer = get_post_answer(mess_send_res.text)
         post_datetime = get_post_datetime(post_answer)
         post_id = get_post_id(post_answer)
-        if chat_id != private_chat_id:
+        if chat_id == group_chat_id:
             used_year_id = insert_used_year(chart_year, post_date, chat_id, post_datetime, post_id)
             insert_used_songs(no1_full_list, used_year_id)
-        if chat_id == group_chat_id:
             chat_name = get_chat_name(post_answer)
             private_message = f"Создан <a href='https://t.me/{chat_name}/{post_id}'>пост</a>"
             send_message(private_message, private_chat_id)
@@ -460,7 +459,7 @@ def send_planned_to_chat(now: datetime, days: int):
 
 
 if __name__ == '__main__':
-    now = datetime(year=2024, month=8, day=19)
+    now = datetime(year=2024, month=9, day=23)
     # years_list = get_years_list(from_year=1963, delta=9)
     # print(years_list)
     # make_planned(from_year=1963, delta=9)
